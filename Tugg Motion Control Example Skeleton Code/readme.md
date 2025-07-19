@@ -2,7 +2,7 @@
 
 This project intercepts **RC PWM signals**, manipulates them in real-time, and outputs to motor controllers (servos or ESCs) via PWM. Built for **Arduino Nano**, it includes advanced features such as input smoothing, deadzone handling, timeout fail-safe, and **ultrasonic-based obstacle prevention** (e.g., using HC-SR04).
 
-🎥 **Watch it in action on YouTube**: [https://youtube.com](https://youtube.com)
+🎥 **Watch it in action on YouTube**: [https://youtube.com/shorts/OADyVq37MFk](https://youtube.com/shorts/OADyVq37MFk)
 
 ---
 
