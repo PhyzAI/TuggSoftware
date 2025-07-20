@@ -19,7 +19,7 @@ Ultrasonic ultrasonic(ULTRASONIC_TRIGGER_PIN, ULTRASONIC_ECHO_PIN);
 float prev = 0;
 
 void setup() {
-  //TODO: if the sensor is touching something else, it will output really high, incorrect numbers - may not be a problem?
+  //TODO: if the sensor is touching something else, it will output really high, incorrect numbers
 
   Serial.begin(9600); 
   pinMode(LED_BUILTIN, OUTPUT);
@@ -51,9 +51,9 @@ void connect_reciever(int input_ch, int output_ch){
 
 void loop() {
   connect_reciever(RECEIVER_CH1_INPUT, RECEIVER_CH1_OUTPUT); //reads the signal in, and reconstructs with the same duty cycle
-  // connect_reciever(RECEIVER_CH2_INPUT, RECEIVER_CH2_OUTPUT);
+  // connect_reciever(RECEIVER_CH2_INPUT, RECEIVER_CH2_OUTPUT); //TODO will have to rework the connect_reciever method for limiting front movement
 
-  int dist = ultrasonic.read(CM);
+  int dist = ultrasonic.read(CM); //TODO what to do when getting a whack value, add a filter to track the change in values, and have it in a reasonable range
   // Serial.println(dist);
 
   if (dist < STOP_DISTANCE){
@@ -65,5 +65,7 @@ void loop() {
     digitalWrite(LED_BUILTIN, LOW);
     digitalWrite(RELAY_SWITCH_PIN, LOW);
   }
+
+  //TODO use milis to add a delay and acount for the delay in the read filter
   
 }
