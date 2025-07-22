@@ -3,20 +3,19 @@
 //Running on an Arduino Nano
 
 
-#define RELAY_SWITCH_PIN 6
+#define RELAY_SWITCH_PIN 2
 #define ULTRASONIC_ECHO_PIN 10
 #define ULTRASONIC_TRIGGER_PIN  11
 
 #define STOP_DISTANCE 50 //cm
 
-#define RECEIVER_CH1_INPUT  2 //motor left
-#define RECEIVER_CH2_INPUT 3 //motor right
+#define RECEIVER_CH1_INPUT  3 //motor left
+#define RECEIVER_CH2_INPUT 5 //motor right
 
 #define RECEIVER_CH1_OUTPUT  9
-#define RECEIVER_CH2_OUTPUT  8
+#define RECEIVER_CH2_OUTPUT  6
 
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER_PIN, ULTRASONIC_ECHO_PIN);
-float prev = 0;
 
 void setup() {
   //TODO: if the sensor is touching something else, it will output really high, incorrect numbers
