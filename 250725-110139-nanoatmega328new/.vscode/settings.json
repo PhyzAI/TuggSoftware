@@ -2,5 +2,6 @@
     "C_Cpp.default.compilerPath": "/usr/bin/gcc",
     "files.associations": {
         "vector": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
 }
