@@ -32,8 +32,10 @@ void Receiver::connect_receiver(int ch) {
     }
   }
 
-  //Depending on if this approach of modifying the timer stuff is needed or not, I may rewrite the connect_receiver function, as right now it will only truly work for channel 1 with an output pin of 9
-  OCR1A = ICR1 * duty_cycle; //sets the duty cycle for PIN 9 SPECIFICALLY
+
+  float new_signal = map(duty_cycle, 0, 100, 0, 255);
+  analogWrite(output, new_signal); //From 0 to 255 representing the duty cycle
+
   // when you go forward, time high decreases
   // when you go backward, time high increases
 }

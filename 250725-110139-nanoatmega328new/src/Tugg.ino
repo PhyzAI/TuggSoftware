@@ -22,17 +22,10 @@ void config_pins(){
   pinMode(ULTRASONIC_ECHO_PIN, INPUT_PULLUP); // if nothing is connected set input to high by default
 }
 
-void config_timer() { // changing the frequency for Timer1 which is connected to pin 9 and 10 - Code courtesy of ChatGPT
-  //Stops timer1
-  TCCR1A = 0; 
-  TCCR1B = 0; 
-
-  // Set Timer1 to Phase Correct PWM with ICR1 as TOP
-  TCCR1A = (1 << COM1A1);              // Non-inverting mode on OC1A
-  TCCR1B = (1 << WGM13) | (1 << CS11) | (1 << CS10); // Phase correct PWM, prescaler 64
-
-  ICR1 = 12500; // Set TOP for 10 Hz: 16MHz / (2 * 64 * 10)
-  OCR1A = 0;     // default duty cycle of 0
+void config_timer() { 
+  //https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf pg 33
+  CLKPR = _BV(CLKPCE);
+  CLKPR = _BV(CLKPS1)| _BV(CLKPS0); //Clock Prescaler
 }
 
 void setup(){

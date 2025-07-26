@@ -7,8 +7,8 @@
 
 #define STOP_DISTANCE 50 // cm
 
-#define RECEIVER_CH1_INPUT 3 // motor forward backward
-#define RECEIVER_CH2_INPUT 5 // motor left right
+#define RECEIVER_CH1_INPUT 3 // motor left right
+#define RECEIVER_CH2_INPUT 5 // motor forward backward
 
 #define RECEIVER_CH1_OUTPUT 9
 #define RECEIVER_CH2_OUTPUT 6
@@ -28,17 +28,15 @@ void config_pins()
   pinMode(ULTRASONIC_ECHO_PIN, INPUT_PULLUP); // if nothing is connected set input to high by default
 }
 
-void config_timer() { // changing the frequency for Timer1 which is connected to pin 9 and 10 - Code courtesy of ChatGPT
-  //Stops timer1
-  TCCR1A = 0; 
-  TCCR1B = 0; 
+void config_timer() { 
+  //https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf pg 33
+  CLKPR = _BV(CLKPCE);
+  CLKPR = _BV(CLKPS1)| _BV(CLKPS0); //Clock Prescaler
 
-  // Set Timer1 to Phase Correct PWM with ICR1 as TOP
-  TCCR1A = (1 << COM1A1);              // Non-inverting mode on OC1A
-  TCCR1B = (1 << WGM13) | (1 << CS11); // Phase correct PWM, prescaler 8
-
-  ICR1 = 100000; // Set TOP for 10 Hz: 16MHz / (2 * 8 * 10)
-  OCR1A = 0;     // default duty cycle of 0
+  // TCCR1A = _BV(COM1A1) | _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
+  // //7, 5, 1, 0
+  // TCCR1B = _BV(CS12);
+  // OCR1A = 180;
 }
 
 void setup(){
@@ -58,10 +56,12 @@ void connect_receiver(int input_ch, int output_ch){
   float t_high = pulseIn(input_ch, HIGH);
   float t_low = pulseIn(input_ch, LOW);
   float duty_cycle = (t_high / (t_high + t_low)) * 100;
-  Serial.print("T-high: ");
-  Serial.println(t_high); // Regular t-h is 1500 ms i think (it extends to 2000 and retracts to 1000)
-  Serial.print("Duty Cycle is: " + duty_cycle);
-  OCR1A = ICR1 * duty_cycle;x
+  Serial.print("T-high: " + String(t_high) + " "); // Regular t-h is 1500 ms i think (it extends to 2000 and retracts to 1000)
+  Serial.print("Duty Cycle is: " + String(duty_cycle));
+  // OCR1A = ICR1 * duty_cycle; //sets the duty cycle for PIN 9 SPECIFICALLY
+
+  float new_signal = map(duty_cycle, 0, 100, 0, 255);
+  analogWrite(output_ch, new_signal); //From 0 to 255 representing the duty cycle
 
   //~150 microseconds
 
@@ -69,13 +69,13 @@ void connect_receiver(int input_ch, int output_ch){
   // when you go backward, time high increases
 }
 
-
-
 void loop(){
   connect_receiver(RECEIVER_CH1_INPUT, RECEIVER_CH1_OUTPUT); // reads the signal in, and reconstructs with the same duty cycle
   // the ch1 output is motor forward and backward, (the mdds will convert the wave into directions for the motor) we don't need t
+  
 
   int dist = ultrasonic.read(CM); // TODO what to do when getting a whack value, add a filter to track the change in values, and have it in a reasonable range
+  Serial.println(dist);
   if (dist < STOP_DISTANCE){
     Serial.println("Too Close!!!!");
     digitalWrite(LED_BUILTIN, HIGH);
