@@ -1,4 +1,7 @@
 #include <Ultrasonic.h>
+#include <Receiver.h>
+#include <Arduino.h>
+
 // Running on an Arduino Nano
 
 #define RELAY_SWITCH_PIN 2
@@ -13,6 +16,7 @@
 #define RECEIVER_CH1_OUTPUT 9
 #define RECEIVER_CH2_OUTPUT 6
 
+Receiver receiver;
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER_PIN, ULTRASONIC_ECHO_PIN);
 
 void config_pins()
@@ -54,26 +58,12 @@ void setup(){
   // This is because a high signal will activate the relay which will keep the switches active. When a low signal it sent, the switches will release, and power will be cut to the motors
 }
 
-void connect_receiver(int input_ch, int output_ch){
-  float t_high = pulseIn(input_ch, HIGH);
-  float t_low = pulseIn(input_ch, LOW);
-  float duty_cycle = (t_high / (t_high + t_low)) * 100;
-  Serial.print("T-high: ");
-  Serial.println(t_high); // Regular t-h is 1500 ms i think (it extends to 2000 and retracts to 1000)
-  Serial.print("Duty Cycle is: " + duty_cycle);
-  OCR1A = ICR1 * duty_cycle;x
-
-  //~150 microseconds
-
-  // when you go forward, time high decreases
-  // when you go backward, time high increases
-}
-
 
 
 void loop(){
-  connect_receiver(RECEIVER_CH1_INPUT, RECEIVER_CH1_OUTPUT); // reads the signal in, and reconstructs with the same duty cycle
+  // connect_receiver(RECEIVER_CH1_INPUT, RECEIVER_CH1_OUTPUT); // reads the signal in, and reconstructs with the same duty cycle
   // the ch1 output is motor forward and backward, (the mdds will convert the wave into directions for the motor) we don't need t
+  
 
   int dist = ultrasonic.read(CM); // TODO what to do when getting a whack value, add a filter to track the change in values, and have it in a reasonable range
   if (dist < STOP_DISTANCE){
