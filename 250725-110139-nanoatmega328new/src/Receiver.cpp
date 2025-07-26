@@ -32,7 +32,8 @@ void Receiver::connect_receiver(int ch) {
     }
   }
 
-  OCR1A = ICR1 * duty_cycle; //sets the duty cycle on the pwm pin
+  //Depending on if this approach of modifying the timer stuff is needed or not, I may rewrite the connect_receiver function, as right now it will only truly work for channel 1 with an output pin of 9
+  OCR1A = ICR1 * duty_cycle; //sets the duty cycle for PIN 9 SPECIFICALLY
   // when you go forward, time high decreases
   // when you go backward, time high increases
 }
