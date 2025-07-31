@@ -71,6 +71,7 @@ void connect_receiver(int input_ch, int output_ch){
 
 void loop(){
   connect_receiver(RECEIVER_CH1_INPUT, RECEIVER_CH1_OUTPUT); // reads the signal in, and reconstructs with the same duty cycle
+  connect_receiver(RECEIVER_CH2_INPUT, RECEIVER_CH2_OUTPUT);
   // the ch1 output is motor forward and backward, (the mdds will convert the wave into directions for the motor) we don't need t
   
 

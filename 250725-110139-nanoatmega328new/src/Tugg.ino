@@ -11,6 +11,8 @@
 #define STOP_DISTANCE 50 // cms
 #define FILTER_THRESHOLD 10 //cms <-- this value or less should be the difference between each scan
 
+#define CH1_INPUT 3
+
 int last_val = -1; //last ultrasonic sensor reading
 
 Receiver receiver;
@@ -34,7 +36,7 @@ void setup(){
   config_pins();
   config_timer();
 
-  receiver.config_channel(1, 3, 9); //Channel 1, pin 3 is input, and pin 9 output (motor forward-backward)
+  receiver.config_channel(1, CH1_INPUT, 9); //Channel 1, pin 3 is input, and pin 9 output (motor forward-backward)
   // receiver.config_channel(2, 5, 6); // motor left right 
 
   digitalWrite(LED_BUILTIN, LOW);
@@ -46,7 +48,7 @@ void setup(){
 
 
 void loop(){
-  receiver.connect_receiver(1); // reads the signal in, and reconstructs with the same duty cycle/frequency
+  // receiver.connect_receiver(1); // reads the signal in, and reconstructs with the same duty cycle/frequency
   // the ch1 output is motor forward and backward, (the mdds will convert the wave into directions for the motor) we don't need ch2
 
   int dist = filter_read(ultrasonic);
@@ -55,13 +57,11 @@ void loop(){
   if (dist < STOP_DISTANCE){
     Serial.println("Too Close!!!!");
     digitalWrite(LED_BUILTIN, HIGH);
-    digitalWrite(RELAY_SWITCH_PIN, HIGH); 
-    receiver.disable_fwd = true; // Disable forward movement
+    receiver.disable_forward(1, RELAY_SWITCH_PIN);
   }
   else{
     digitalWrite(LED_BUILTIN, LOW);
     digitalWrite(RELAY_SWITCH_PIN, LOW);
-    receiver.disable_fwd = false;
   }
 
   // TODO use milis to add a delay and acount for the delay in the read filter
