@@ -1,92 +1,80 @@
 #include <Ultrasonic.h>
 // Running on an Arduino Nano
 
-#define RELAY_SWITCH_PIN 2
-#define ULTRASONIC_ECHO_PIN 10
-#define ULTRASONIC_TRIGGER_PIN 11
-
-#define STOP_DISTANCE 50 // cm
-
-#define RECEIVER_CH1_INPUT 3 // motor left right
-#define RECEIVER_CH2_INPUT 5 // motor forward backward
-
-#define RECEIVER_CH1_OUTPUT 9
-#define RECEIVER_CH2_OUTPUT 6
+#define RELAY_SWITCH_PIN 2         // motor power cutoff relay control
+#define ULTRASONIC_ECHO_PIN 10     // ultrasonic rx   
+#define ULTRASONIC_TRIGGER_PIN 11  // ultrasonic tx 
+#define RECEIVER_CH1_INPUT 3       // motor left right
+#define RECEIVER_CH2_INPUT 5       // motor forward backward
+#define RECEIVER_CH6_INPUT 6       // set distance input
+int us_dist =0;
 
 Ultrasonic ultrasonic(ULTRASONIC_TRIGGER_PIN, ULTRASONIC_ECHO_PIN);
 
 void config_pins()
 {
-  pinMode(RECEIVER_CH1_INPUT, INPUT);
-  pinMode(RECEIVER_CH2_INPUT, INPUT);
-
-  pinMode(RECEIVER_CH1_OUTPUT, OUTPUT);
-  pinMode(RECEIVER_CH2_OUTPUT, OUTPUT);
-
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(RELAY_SWITCH_PIN, OUTPUT);
+  pinMode(RECEIVER_CH1_INPUT, INPUT_PULLUP);  // Motor F/B input
+  pinMode(RECEIVER_CH2_INPUT, INPUT_PULLUP);  // Motor L/R input
+  pinMode(RECEIVER_CH6_INPUT, INPUT_PULLUP);  // Distance Sensitivity input
+  pinMode(LED_BUILTIN, OUTPUT);               // Status LED
+  pinMode(RELAY_SWITCH_PIN, OUTPUT);          // Motor cutoff to relay
   pinMode(ULTRASONIC_ECHO_PIN, INPUT_PULLUP); // if nothing is connected set input to high by default
-}
-
-void config_timer() { 
-  //https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf pg 33
-  CLKPR = _BV(CLKPCE);
-  CLKPR = _BV(CLKPS1)| _BV(CLKPS0); //Clock Prescaler
-
-  // TCCR1A = _BV(COM1A1) | _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
-  // //7, 5, 1, 0
-  // TCCR1B = _BV(CS12);
-  // OCR1A = 180;
 }
 
 void setup(){
   // TODO: if the sensor is touching something else, it will output really high, incorrect numbers
-  Serial.begin(9600);
-  
+  Serial.begin(9600);    // turn on serial port for debug only
   config_pins();
-  config_timer();
-
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(LED_BUILTIN, LOW);         // start with the LED alarm low and the relay engaged
   digitalWrite(RELAY_SWITCH_PIN, LOW);
   // We want pin 2 to be LOW regularly, and pin 2 to be HIGH if it gets too close
   // This is because a high signal will activate the relay which will keep the switches active. When a low signal it sent, the switches will release, and power will be cut to the motors
 }
 
-void connect_receiver(int input_ch, int output_ch){
+void connect_receiver(int input_ch, int* pwm_value){
   float t_high = pulseIn(input_ch, HIGH);
-  float t_low = pulseIn(input_ch, LOW);
+  float t_low  = pulseIn(input_ch, LOW);
   float duty_cycle = (t_high / (t_high + t_low)) * 100;
-  Serial.print("T-high: " + String(t_high) + " "); // Regular t-h is 1500 ms i think (it extends to 2000 and retracts to 1000)
-  Serial.print("Duty Cycle is: " + String(duty_cycle));
-  // OCR1A = ICR1 * duty_cycle; //sets the duty cycle for PIN 9 SPECIFICALLY
 
-  float new_signal = map(duty_cycle, 0, 100, 0, 255);
-  analogWrite(output_ch, new_signal); //From 0 to 255 representing the duty cycle
-
-  //~150 microseconds
-
-  // when you go forward, time high decreases
-  // when you go backward, time high increases
+  *pwm_value = map(duty_cycle, 0, 20, 0, 255);
+  if(*pwm_value >255) { 
+    *pwm_value=255;
+  }
 }
 
 void loop(){
-  connect_receiver(RECEIVER_CH1_INPUT, RECEIVER_CH1_OUTPUT); // reads the signal in, and reconstructs with the same duty cycle
-  connect_receiver(RECEIVER_CH2_INPUT, RECEIVER_CH2_OUTPUT);
-  // the ch1 output is motor forward and backward, (the mdds will convert the wave into directions for the motor) we don't need t
+int stop_distance; // initial stop_distance 
+int f_b_value    ;  // initial forward/backward
+int l_r_value    ;  // initial laft/right
+  connect_receiver(RECEIVER_CH1_INPUT, &f_b_value); // reads the signal in, and reconstructs with the same duty cycle
+  connect_receiver(RECEIVER_CH2_INPUT, &l_r_value);
+  connect_receiver(RECEIVER_CH6_INPUT, &stop_distance);
+ 
+  int us_dist_last = us_dist;
+  int us_dist = map(ultrasonic.read(CM), 0, 260, 50, 140); 
+  if (us_dist > 140) { //Do not allow out-of-range values
+    us_dist=140;
+  }
+  /*         IMPROVE THIS FILTER
+  int filter_thresh = abs(us_dist-us_dist_last);
+  if ( filter_thresh > 50) {
+    us_dist = us_dist_last; // I think this will NOT work
+    Serial.println("Failed Filter threshold!");
+  }
+  */
+  char printvar[100];
+  sprintf(printvar,"StopDistance: %03d, US_Dist: %03d, F/B: %03d \n", stop_distance, us_dist, f_b_value );
+  Serial.print(printvar);
   
-
-  int dist = ultrasonic.read(CM); // TODO what to do when getting a whack value, add a filter to track the change in values, and have it in a reasonable range
-  Serial.println(dist);
-  if (dist < STOP_DISTANCE){
-    Serial.println("Too Close!!!!");
-    digitalWrite(LED_BUILTIN, HIGH);
-    digitalWrite(RELAY_SWITCH_PIN, HIGH); // Disable forward movement
-    
+  if (f_b_value < 100){
+    if (us_dist < stop_distance){
+      Serial.println("Too Close, going forward");
+      digitalWrite(LED_BUILTIN, HIGH);
+      digitalWrite(RELAY_SWITCH_PIN, HIGH);
+    }
   }
   else{
     digitalWrite(LED_BUILTIN, LOW);
     digitalWrite(RELAY_SWITCH_PIN, LOW);
   }
-
-  // TODO use milis to add a delay and acount for the delay in the read filter
 }
